@@ -163,6 +163,18 @@ class ListGenome(Genome):
         return "FIXME"
 
 
+class Node:
+    def __init__(self, te, prev = None, next = None):
+        self.te = te
+        self.prev = prev
+        self.next = next
+
+def insert_last(sequence, te):
+    last = Node(te, sequence, sequence.next)
+    last.prev.next = last
+    last.next.prev = last
+
+
 class LinkedListGenome(Genome):
     """
     Representation of a genome.
@@ -171,8 +183,31 @@ class LinkedListGenome(Genome):
     """
 
     def __init__(self, n: int):
-        """Create a new genome with length n."""
+        """
+        Create a new genome with length n.
+        
+        How we represent genome:
+        0: no TEs
+        1: active TEs
+        2: disabled TEs
+        """
         ...  # FIXME
+
+        # Init variables
+        self.id = 1 # TEs ID
+        self.active = [] # Active TEs
+        self.length = n # Sequence length
+
+        # Initialize first nucleotide
+        self.nucleotide = Node(0)
+        self.nucleotide.prev = self.nucleotide
+        self.nucleotide.next = self.nucleotide
+        
+        # Insert the rest of nucleotide
+        sequence = [0] * (n-1)
+        for nuc in sequence:
+            insert_last(self.nucleotide, nuc)
+
 
     def insert_te(self, pos: int, length: int) -> int:
         """
@@ -219,12 +254,12 @@ class LinkedListGenome(Genome):
     def active_tes(self) -> list[int]:
         """Get the active TE IDs."""
         # FIXME
-        return []
+        return self.active
 
     def __len__(self) -> int:
         """Current length of the genome."""
         # FIXME
-        return 0
+        return self.length
 
     def __str__(self) -> str:
         """
@@ -238,4 +273,16 @@ class LinkedListGenome(Genome):
         represented with the character '-', active TEs with 'A', and disabled
         TEs with 'x'.
         """
-        return "FIXME"
+        node = self.nucleotide.next
+        out = ""
+
+        while node and node is not self.nucleotide:
+            match node.te:
+                case 0:
+                    out += '-'
+                case 1:
+                    out += 'A'
+                case 2:
+                    out += 'x'
+            node = node.next
+        return out
