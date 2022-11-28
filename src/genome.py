@@ -164,15 +164,21 @@ class ListGenome(Genome):
 
 
 class Node:
-    def __init__(self, te, prev = None, next = None):
+    def __init__(self, te=None, prev = None, next = None):
         self.te = te
         self.prev = prev
         self.next = next
 
 def insert_last(sequence, te):
-    last = Node(te, sequence, sequence.next)
-    last.prev.next = last
-    last.next.prev = last
+    new = Node()
+    
+    last = sequence.prev
+    new.te = te
+    new.next = sequence
+
+    sequence.prev = new
+    new.prev = last
+    last.next = new
 
 
 class LinkedListGenome(Genome):
@@ -198,15 +204,14 @@ class LinkedListGenome(Genome):
         self.active = [] # Active TEs
         self.length = n # Sequence length
 
-        # Initialize first nucleotide
-        self.nucleotide = Node(0)
+        # Initialize LinkedList nucleotide
+        self.nucleotide = Node()
         self.nucleotide.prev = self.nucleotide
         self.nucleotide.next = self.nucleotide
         
-        # Insert the rest of nucleotide
-        sequence = [0] * (n-1)
-        for nuc in sequence:
-            insert_last(self.nucleotide, nuc)
+        # Insert the nucleotide
+        for _ in range(n):
+            insert_last(self.nucleotide, '-')
 
 
     def insert_te(self, pos: int, length: int) -> int:
@@ -277,12 +282,13 @@ class LinkedListGenome(Genome):
         out = ""
 
         while node and node is not self.nucleotide:
-            match node.te:
-                case 0:
-                    out += '-'
-                case 1:
-                    out += 'A'
-                case 2:
-                    out += 'x'
+            out += str(node.te)
+            # match node.te:
+            #     case 0:
+            #         out += '-'
+            #     case 1:
+            #         out += 'A'
+            #     case 2:
+            #         out += 'x'
             node = node.next
         return out
