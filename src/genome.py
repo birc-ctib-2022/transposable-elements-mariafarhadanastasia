@@ -211,7 +211,7 @@ class LinkedListGenome(Genome):
 
         # Init variables
         self.id = 0 # TEs ID
-        self.active = {} # Active TEs e.g. {id1: [start, length], id2: [start, length]}
+        self.active = {} # Active TEs e.g. {id1: [start, end], id2: [start, end]}
         self.length = n # Sequence length
 
         # Initialize first node LinkedList nucleotide
@@ -239,16 +239,15 @@ class LinkedListGenome(Genome):
         """
         ...  # FIXME
         # Traverse to index pos
-        current = self.nucleotide
+        current = self.nucleotide.prev
+        start_index = 0
         if pos < 0:
-            start_index = self.length + 1
-            for _ in range(-pos+1):
+            pos = self.length + pos
+            for _ in range(0,pos):
                 current = current.prev
-                start_index -= 1
-
+                start_index += 1
         else:
-            start_index = 0
-            for _ in range(pos):
+            for _ in range(0,pos):
                 current = current.next
                 start_index += 1
 
@@ -256,18 +255,28 @@ class LinkedListGenome(Genome):
         # to reconnect it again afterward            
         after = current.next
         
+        # Check if it collides with other TEs
+        is_collide = False
+        for id, [start_te, end_te] in self.active.items():
+            if start_index >= start_te and start_index <= end_te:
+                is_collide = True
+                break
+        
+        if is_collide:
+            self.disable_te(id)
+        
         # Insert te
         for _ in range(length):
             insert_next(current, 1)
             current = current.next
         
-        current.next = after
         after.prev = current
+        current.next = after
         
         # Update variable
         self.id += 1
         self.length += length
-        self.active[self.id] = [start_index, length]
+        self.active[self.id] = [start_index, start_index + length]
 
         return self.id
 
@@ -296,6 +305,19 @@ class LinkedListGenome(Genome):
         for those.
         """
         ...  # FIXME
+        [start, end] = self.active[te]
+
+        # Traverse through the linked list
+        current = self.nucleotide
+
+        for _ in range(start):
+            current = current.next
+
+        for _ in range(start, end):
+            current.te = 2 # disable te
+            current = current.next
+
+        del self.active[te] # remove id from self.active
 
     def active_tes(self) -> list[int]:
         """Get the active TE IDs."""
