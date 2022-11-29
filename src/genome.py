@@ -94,7 +94,8 @@ class ListGenome(Genome):
 
     def __init__(self, n: int):
         """Create a new genome with length n."""
-        ...  # FIXME
+        #initialize the genome with no TE's yet.
+        self.genome=(['-']*n)
 
     def insert_te(self, pos: int, length: int) -> int:
         """
