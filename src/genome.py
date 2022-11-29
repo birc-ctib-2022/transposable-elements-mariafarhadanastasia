@@ -118,9 +118,10 @@ class ListGenome(Genome):
             ID = max(self.TE) + 1
         self.TE[ID] = length
         self.active.append(ID)
-        if isinstance(self.genome[pos-1], int) and isinstance(self.genome[pos], int):
-            disable_ID = self.genome[pos]
-            self.disable_te(disable_ID)
+        if pos > 1:
+            if isinstance(self.genome[pos-1], int) and isinstance(self.genome[pos], int):
+                disable_ID = self.genome[pos]
+                self.disable_te(disable_ID)
         self.genome[pos:pos] = [ID]*length
         return ID
 
@@ -145,12 +146,11 @@ class ListGenome(Genome):
                 start_orginal_te = i
                 break
         start_copy = start_orginal_te + offset
-        print(start_copy)
-        if start_copy > len(self):
-            start_copy = start_copy-len(self)
-            print(start_copy)
-        if start_copy < 0: 
-            start_copy = len(self) + start_copy
+        while start_copy not in range(0, len(self)):
+            if start_copy > len(self):
+                start_copy = start_copy-len(self)
+            if start_copy < 0: 
+                start_copy = len(self) + start_copy
         return self.insert_te(start_copy,self.TE[te])
             
 
