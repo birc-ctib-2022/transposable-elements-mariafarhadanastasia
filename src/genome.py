@@ -164,6 +164,34 @@ class ListGenome(Genome):
         return "FIXME"
 
 
+class Node:
+    def __init__(self, te=None, prev = None, next = None):
+        self.te = te
+        self.prev = prev
+        self.next = next
+
+def insert_last(sequence, te):
+    new = Node()
+    
+    new.te = te
+    new.next = sequence
+    last = sequence.prev
+    new.prev = last
+    
+    sequence.prev = new
+    last.next = new
+
+def insert_next(node, te):
+    new = Node()
+
+    new.te = te
+    new.prev = node
+    node.next = new
+
+    node.next.prev = new
+    new.next = node.next 
+
+
 class LinkedListGenome(Genome):
     """
     Representation of a genome.
@@ -172,8 +200,30 @@ class LinkedListGenome(Genome):
     """
 
     def __init__(self, n: int):
-        """Create a new genome with length n."""
+        """
+        Create a new genome with length n.
+        
+        How we represent genome:
+        0: no TEs
+        1: active TEs
+        2: disabled TEs
+        """
         ...  # FIXME
+
+        # Init variables
+        self.id = 0 # TEs ID
+        self.active = {} # Active TEs e.g. {id1: [start, length], id2: [start, length]}
+        self.length = n # Sequence length
+
+        # Initialize first node LinkedList nucleotide
+        self.nucleotide = Node(0)
+        self.nucleotide.prev = self.nucleotide
+        self.nucleotide.next = self.nucleotide
+        
+        # Insert the nucleotide
+        for _ in range(1,n):
+            insert_last(self.nucleotide, 0)
+
 
     def insert_te(self, pos: int, length: int) -> int:
         """
@@ -189,7 +239,38 @@ class LinkedListGenome(Genome):
         Returns a new ID for the transposable element.
         """
         ...  # FIXME
-        return -1
+        # Traverse to index pos
+        current = self.nucleotide
+        if pos < 0:
+            start_index = self.length + 1
+            for _ in range(-pos+1):
+                current = current.prev
+                start_index -= 1
+
+        else:
+            start_index = 0
+            for _ in range(pos):
+                current = current.next
+                start_index += 1
+
+        # Temporary save node after the current
+        # to reconnect it again afterward            
+        after = current.next
+        
+        # Insert te
+        for _ in range(length):
+            insert_next(current, 1)
+            current = current.next
+        
+        current.next = after
+        after.prev = current
+        
+        # Update variable
+        self.id += 1
+        self.length += length
+        self.active[self.id] = [start_index, length]
+
+        return self.id
 
     def copy_te(self, te: int, offset: int) -> int | None:
         """
@@ -220,12 +301,12 @@ class LinkedListGenome(Genome):
     def active_tes(self) -> list[int]:
         """Get the active TE IDs."""
         # FIXME
-        return []
+        return self.active
 
     def __len__(self) -> int:
         """Current length of the genome."""
         # FIXME
-        return 0
+        return self.length
 
     def __str__(self) -> str:
         """
@@ -239,4 +320,17 @@ class LinkedListGenome(Genome):
         represented with the character '-', active TEs with 'A', and disabled
         TEs with 'x'.
         """
-        return "FIXME"
+        node = self.nucleotide
+        out = ""
+
+        for _ in range(self.length):
+            out += str(node.te)
+            # match node.te:
+            #     case 0:
+            #         out += '-'
+            #     case 1:
+            #         out += 'A'
+            #     case 2:
+            #         out += 'x'
+            node = node.next
+        return out
