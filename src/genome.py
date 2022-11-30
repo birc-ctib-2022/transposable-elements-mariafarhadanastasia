@@ -217,13 +217,14 @@ def insert_last(sequence, te):
 
 def insert_next(node, te):
     new = Node()
-
     new.te = te
-    new.prev = node
-    node.next = new
 
-    node.next.prev = new
     new.next = node.next 
+    node.next = new
+    new.prev = node
+    if new.next is not None:
+        node.next.prev = new
+    
 
 
 class LinkedListGenome(Genome):
@@ -273,45 +274,51 @@ class LinkedListGenome(Genome):
         Returns a new ID for the transposable element.
         """
         ...  # FIXME
-        # Traverse to index pos
+        # Walk to pos
         current = self.nucleotide.prev
         start_index = 0
         if pos < 0:
             pos = self.length + pos
             for _ in range(0,pos):
-                current = current.prev
+                current = current.next
                 start_index += 1
         else:
             for _ in range(0,pos):
                 current = current.next
                 start_index += 1
 
-        # Temporary save node after the current
-        # to reconnect it again afterward            
+        # Save node after the current
+        # to reconnect it again afterwards            
         after = current.next
         
-        # Check if it collides with other TEs
-        is_collide = False
+        # Disable active TE if it collides with new TE
         for id, [start_te, end_te] in self.active.items():
-            if start_index >= start_te and start_index <= end_te:
-                is_collide = True
+            if start_index > start_te and start_index < end_te:
+                self.disable_te(id)
                 break
         
-        if is_collide:
-            self.disable_te(id)
-        
-        # Insert te
+        # Insert new TE
         for _ in range(length):
             insert_next(current, 1)
             current = current.next
         
-        after.prev = current
+        # Reconnect the node
         current.next = after
+        after.prev = current
         
         # Update variable
         self.id += 1
         self.length += length
-        self.active[self.id] = [start_index, start_index + length]
+        self.active[self.id] = [start_index, start_index + length - 1]
+
+        # function to update self.active after inserting TEs
+        for key, [start, _] in self.active.items():
+            if self.id == key:
+                pass
+            else:
+                if start > start_index:
+                    self.active[key][0] += length
+                    self.active[key][1] += length
 
         return self.id
 
@@ -330,6 +337,66 @@ class LinkedListGenome(Genome):
         If te is not active, return None (and do not copy it).
         """
         ...  # FIXME
+        # Check if TE is active, otherwise return None
+        if te not in self.active_tes():
+            return None
+        
+        # Get start_index of the te
+        [start, end] = self.active[te]
+        length = end - start + 1
+
+        # Walk to start index
+        start_index = 0
+        current = self.nucleotide.prev
+        for _ in range(0,start):
+            current = current.next
+            start_index += 1
+
+        # Walk to offset
+        if offset < 0:
+            offset = (self.length +  offset) % self.length
+            for _ in range(0,offset):
+                current = current.next
+            start_index = (start_index + offset) % self.length
+        else:
+            for _ in range(0,offset):
+                current = current.next
+            start_index = start_index + offset
+
+        # Save node after the current
+        # to reconnect it again afterwards            
+        after = current.next
+            
+        # Disable active TE if it collides with new TE
+        for id, [start_te, end_te] in self.active.items():
+            if start_index > start_te and start_index < end_te:
+                self.disable_te(id)
+                break
+        
+        # Copy TE
+        for _ in range(end - start + 1):
+            insert_next(current, 1)
+            current = current.next
+
+        # Reconnect the node
+        current.next = after
+        after.prev = current
+        
+        # Update variable
+        self.id += 1
+        self.length += length
+        self.active[self.id] = [start_index, start_index + length - 1]
+
+        # function to update self.active after inserting TEs
+        for key, [start, _] in self.active.items():
+            if self.id == key:
+                pass
+            else:
+                if start > start_index:
+                    self.active[key][0] += length
+                    self.active[key][1] += length
+
+        return self.id
 
     def disable_te(self, te: int) -> None:
         """
@@ -340,24 +407,25 @@ class LinkedListGenome(Genome):
         for those.
         """
         ...  # FIXME
-        [start, end] = self.active[te]
+        if te in self.active.keys():
+            [start, end] = self.active[te]
 
-        # Traverse through the linked list
-        current = self.nucleotide
+            # Traverse through the linked list
+            current = self.nucleotide.prev
 
-        for _ in range(start):
-            current = current.next
+            for _ in range(start + 1):
+                current = current.next
 
-        for _ in range(start, end):
-            current.te = 2 # disable te
-            current = current.next
+            for _ in range(end - start + 1):
+                current.te = 2 # disable te
+                current = current.next
 
-        del self.active[te] # remove id from self.active
+            del self.active[te] # remove id from self.active
 
     def active_tes(self) -> list[int]:
         """Get the active TE IDs."""
         # FIXME
-        return self.active
+        return list(self.active.keys())
 
     def __len__(self) -> int:
         """Current length of the genome."""
@@ -380,13 +448,13 @@ class LinkedListGenome(Genome):
         out = ""
 
         for _ in range(self.length):
-            out += str(node.te)
-            # match node.te:
-            #     case 0:
-            #         out += '-'
-            #     case 1:
-            #         out += 'A'
-            #     case 2:
-            #         out += 'x'
+            # out += str(node.te)
+            match node.te:
+                case 0:
+                    out += '-'
+                case 1:
+                    out += 'A'
+                case 2:
+                    out += 'x'
             node = node.next
         return out
