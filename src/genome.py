@@ -486,13 +486,13 @@ class Link(Generic[T]):
         self.next = n
 
 
-def insert_after(link: Link[T], val: T) -> None:
+def insert_before(link: Link[T], val: T) -> None:
     """Add a new link containing avl after link."""
     new_link = Link(val, link.prev, link)
     new_link.prev.next = new_link
     new_link.next.prev = new_link
 
-def insert_before(link: Link[T], val: T) -> None:
+def insert_after(link: Link[T], val: T) -> None:
     """Add a new link containing avl before link."""
     new_link = Link(val, link, link.next)
     new_link.prev.next = new_link
@@ -547,7 +547,6 @@ class DLList(Generic[T]):
             link = link.next
         return f"[{', '.join(elms)}]"
     __repr__ = __str__  # because why not?
-
 
 class LinkedListGenome2(Genome):
     """
@@ -607,10 +606,10 @@ class LinkedListGenome2(Genome):
         
         if pos < 0: 
             for _ in range(length):
-                insert_before(link, ID)
+                insert_after(link, ID)
         else:
             for _ in range(length):
-                insert_after(link, ID)   
+                insert_before(link, ID)   
 
 
         return ID
