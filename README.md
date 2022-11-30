@@ -102,4 +102,16 @@ When you have implemented the two (or more) classes, describe the complexity of 
 
 **FIXME: OPERATION COMPLEXITY**
 
+Function   | ListGenome | LinkedListGenome | LinkedListGenome2
+-----------|------------|------------------|------------------
+init       | O(n)       | |
+insert_te  | | |
+copy_te    | | |
+disable_te | | |
+active_te  | O(1)       | O(1)             | O(1)
+len        | O(1)       | O(1)             | O(2n)
+str        | O(n)       | O(n)             | O(2n)
+
+When *n* is length of genome 
+
 In `src/simulate.py` you will find a program that can run simulations and tell you actual time it takes to simulate with different implementations. You can use it to test your analysis. You can modify the parameters to the simulator if you want to explore how they affect the running time.
