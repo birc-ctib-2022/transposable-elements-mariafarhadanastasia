@@ -1,5 +1,9 @@
 """A circular genome for simulating transposable elements."""
 
+from __future__ import annotations
+from typing import (
+    Generic, TypeVar, Iterable,
+)
 from abc import (
     # A tag that says that we can't use this class except by specialising it
     ABC,
@@ -458,3 +462,235 @@ class LinkedListGenome(Genome):
                     out += 'x'
             node = node.next
         return out
+
+
+
+""" 
+The implementation of doubly linked lists from class
+"""
+
+T = TypeVar('T')
+
+
+class Link(Generic[T]):
+    """Doubly linked link."""
+
+    val: T
+    prev: Link[T]
+    next: Link[T]
+
+    def __init__(self, val: T, p: Link[T], n: Link[T]):
+        """Create a new link and link up prev and next."""
+        self.val = val
+        self.prev = p
+        self.next = n
+
+
+def insert_after(link: Link[T], val: T) -> None:
+    """Add a new link containing avl after link."""
+    new_link = Link(val, link.prev, link)
+    new_link.prev.next = new_link
+    new_link.next.prev = new_link
+
+def insert_before(link: Link[T], val: T) -> None:
+    """Add a new link containing avl before link."""
+    new_link = Link(val, link, link.next)
+    new_link.prev.next = new_link
+    new_link.next.prev = new_link
+
+
+def remove_link(link: Link[T]) -> None:
+    """Remove link from the list."""
+    link.prev.next = link.next
+    link.next.prev = link.prev
+
+
+class DLList(Generic[T]):
+    """
+    Wrapper around a doubly-linked list.
+
+    This is a circular doubly-linked list where we have a
+    dummy link that function as both the beginning and end
+    of the list. By having it, we remove multiple special
+    cases when we manipulate the list.
+
+    >>> x = DLList([1, 2, 3, 4])
+    >>> print(x)
+    [1, 2, 3, 4]
+    """
+
+    head: Link[T]  # Dummy head link
+
+    def __init__(self, seq: Iterable[T] = ()):
+        """Create a new circular list from a sequence."""
+        # Configure the head link.
+        # We are violating the type invariants this one place,
+        # but only here, so we ask the checker to just ignore it.
+        # Once the head element is configured we promise not to do
+        # it again.
+        self.head = Link(None, None, None)  # type: ignore
+        self.head.prev = self.head
+        self.head.next = self.head
+
+        # Add elements to the list, exploiting that self.head.prev
+        # is the last element in the list, so appending means inserting
+        # after that link.
+        for val in seq:
+            insert_after(self.head.prev, val)
+
+    def __str__(self) -> str:
+        """Get string with the elements going in the next direction."""
+        elms: list[str] = []
+        link = self.head.next
+        while link and link is not self.head:
+            elms.append(str(link.val))
+            link = link.next
+        return f"[{', '.join(elms)}]"
+    __repr__ = __str__  # because why not?
+
+
+class LinkedListGenome2(Genome):
+    """
+    Representation of a genome.
+
+    Implements the Genome interface using linked lists.
+    """
+
+    def __init__(self, n: int):
+        """
+        Create a new genome with length n.
+        """
+        self.genome = DLList(['-']*n)
+        self.active = []
+        self.TE = {}
+
+
+
+    def insert_te(self, pos: int, length: int) -> int:
+        """
+        Insert a new transposable element.
+
+        Insert a new transposable element at position pos and len
+        nucleotide forward.
+
+        If the TE collides with an existing TE, i.e. genome[pos]
+        already contains TEs, then that TE should be disabled and
+        removed from the set of active TEs.
+
+        Returns a new ID for the transposable element.
+        """
+        if len(self.TE) == 0:
+            ID = 1
+        else:
+            ID = max(self.TE) +1
+        self.TE[ID] = length
+        self.active.append(ID)
+        link = self.genome.head
+        
+        if pos > 0: 
+            link = link.next
+            for _ in range(pos): 
+                link = link.next 
+                if link == self.genome.head:
+                    link = link.next
+       
+        if pos < 0:
+            link = link.prev
+            for _ in range(abs(pos)): 
+                link = link.prev
+                if link == self.genome.head:
+                    link = link.prev
+        
+        if link != self.genome.head: 
+            if isinstance(link.prev.val, int) and isinstance(link.val, int): 
+                self.disable_te(link.val)
+        
+        if pos < 0: 
+            for _ in range(length):
+                insert_before(link, ID)
+        else:
+            for _ in range(length):
+                insert_after(link, ID)   
+
+
+        return ID
+
+    def copy_te(self, te: int, offset: int) -> int | None:
+        """
+        Copy a transposable element.
+
+        Copy the transposable element te to an offset from its current
+        location.
+
+        The offset can be positive or negative; if positive the te is copied
+        upwards and if negative it is copied downwards. If the offset moves
+        the copy left of index 0 or right of the largest index, it should
+        wrap around, since the genome is circular.
+
+        If te is not active, return None (and do not copy it).
+        """
+        if te not in self.active:
+            return None
+
+        link = self.genome.head
+        for i in range (len(self)):
+            if link.val == te:
+                pos = i-1
+                break
+            link = link.next
+        
+        return self.insert_te(pos+offset, self.TE[te])
+
+    def disable_te(self, te: int) -> None:
+        """
+        Disable a TE.
+
+        If te is an active TE, then make it inactive. Inactive
+        TEs are already inactive, so there is no need to do anything
+        for those.
+        """
+        link = self.genome.head
+        for _ in range(len(self)): 
+            link = link.next
+            if link.val == te:
+                break
+        for _ in range(self.TE[te]): 
+            link.val = 'x'
+            link = link.next
+        self.active.remove(te)
+        
+
+    def active_tes(self) -> list[int]:
+        """Get the active TE IDs."""
+        return self.active
+
+    def __len__(self) -> int:
+        """Current length of the genome."""
+        acc = 0
+        link = self.genome.head.next
+        while link != self.genome.head:
+            acc += 1
+            link = link.next
+        return acc
+
+    def __str__(self) -> str:
+        """
+        Return a string representation of the genome.
+
+        Create a string that represents the genome. By nature, it will be
+        linear, but imagine that the last character is immidiatetly followed
+        by the first.
+
+        The genome should start at position 0. Locations with no TE should be
+        represented with the character '-', active TEs with 'A', and disabled
+        TEs with 'x'.
+        """
+        elms: list[str] = []
+        link = self.genome.head.next
+        while link and link is not self.genome.head:
+            if isinstance(link.val,int):
+                elms.append('A')
+            else:
+                elms.append(str(link.val))
+            link = link.next
+        return "".join(elms) 
