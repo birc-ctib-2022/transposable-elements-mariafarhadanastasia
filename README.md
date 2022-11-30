@@ -101,17 +101,23 @@ You are free to implement the genome classes however you want, and using whateer
 When you have implemented the two (or more) classes, describe the complexity of each operation as a function of the genome size (at the time of the operation), and the size of the TE involved (and when copying, the offset you are copying). Put the description here:
 
 **FIXME: OPERATION COMPLEXITY**
+For doubly linked lists: 
+- Accesing is in linear time
+- Searching is in linear time 
+- Adding or deleting elements are in constant time
 
 Function   | ListGenome | LinkedListGenome | LinkedListGenome2
 -----------|------------|------------------|------------------
-init       | O(n)       | |
+init       | O(n)       | | O(n)
 insert_te  | | |
-copy_te    | | |
-disable_te | | |
+copy_te    | | | O(n) + O(insert_te)
+disable_te | | | O(n+m)
 active_te  | O(1)       | O(1)             | O(1)
 len        | O(1)       | O(1)             | O(2n)
 str        | O(n)       | O(n)             | O(2n)
 
-When *n* is length of genome 
+When:
+- *n* is the length of genome 
+- *m* is the length of the TE
 
 In `src/simulate.py` you will find a program that can run simulations and tell you actual time it takes to simulate with different implementations. You can use it to test your analysis. You can modify the parameters to the simulator if you want to explore how they affect the running time.
