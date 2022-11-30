@@ -101,6 +101,7 @@ You are free to implement the genome classes however you want, and using whateer
 When you have implemented the two (or more) classes, describe the complexity of each operation as a function of the genome size (at the time of the operation), and the size of the TE involved (and when copying, the offset you are copying). Put the description here:
 
 **FIXME: OPERATION COMPLEXITY**
+
 For doubly linked lists: 
 - Accesing is in linear time
 - Searching is in linear time 
