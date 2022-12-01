@@ -110,7 +110,7 @@ For doubly linked lists:
 Function   | ListGenome | LinkedListGenome | LinkedListGenome2
 -----------|------------|------------------|------------------
 init       | O(n)       | O(n)             | O(n)
-insert_te  | O(m+k) + O(disable_te)| O(n+m) | O(n+m+k + disable_te)
+insert_te  | O(m+k) + O(disable_te)| O(n+m) + O(disable_te) | O(n+m+k + disable_te)
 copy_te    | O(n) + O(insert_te)| O(n+m) + O(disable_te) | O(n) + O(insert_te)
 disable_te | O(n+m)     | O(n+m)           | O(n+m)
 active_te  | O(1)       | O(1)             | O(1)
@@ -123,25 +123,25 @@ When:
 - *k* is number of TEs in the genome
 
 Same for all: 
-- Initiate: To initiate we have to put all nucleotides into the genome. Which runs in O(n). Furthermore we add some other elements to keep track of TE's which runs in constant time
+- Initiate: To initiate we have to put all nucleotides into the genome. Which runs in `O(n)`. Furthermore we add some other elements to keep track of TE's which runs in constant time
 - active_te: For all implementations this method just returns a list, which runs in constant time
-- disable_te: Has to search trough the genome to find the TE to disable (O(n) in worst case) and then disable the TE which is dependent on the length of the TE. The complexity is O(n+m)
+- disable_te: Has to search trough the genome to find the TE to disable (`O(n)` in worst case) and then disable the TE which is dependent on the length of the TE. The complexity is `O(n+m)`
 - str: To return a string all elements has to be added to the string. join runs in linear time. 
 
 For ListGenome: 
-- insert_te: We have to search for the max ID (O(k)), disable a TE (in worst case) and insert the TE (O(m))
+- insert_te: We have to search for the `max ID (O(k))`, disable a TE (in worst case) and insert the TE `(O(m))`
 - copy_te: Has to find the start of the TE, that we want to copy. In worst case it is O(n). Afterwards we can find the position to insert the TE and insert it. 
-- len: uses Python's build.in method len() for lists, which runs in constant time. 
+- len: uses Python's build.in method `len()` for lists, which runs in constant time. 
 
 For LinkedListGenome: 
-- insert_te: 
-- copy_te: 
-- len: return self.length, which is a part of the LinkedListGenome class and is updated at all times. Returning self.length runs in constant time. 
+- insert_te: First, we walk through our genome to index `pos` (worst case 'O(n)'), then we insert our new TE with `O(m)`. Also call `disable_te()` if new TE collides with another TE. Overall time complexity is `O(n)`.
+- copy_te: We also walk to first index of our TE we want to copy `O(n)`, then walk to offset `O(n)`. Then, we insert our TEs and disable colliding TE if needed. Overall time complexity is `O(n)`. 
+- len: return `self.length`, which is a part of the `LinkedListGenome` class and is updated at all times. Returning `self.length` runs in constant time `O(1)`. 
 
 For LinkedListGenome2: 
-- insert_te: Has to walk to the position where the TE must be inserted, which is O(n). From here we have to search for the max ID (O(k)), disable a TE (in worst case) and insert the TE (O(m))
+- insert_te: Has to walk to the position where the TE must be inserted, which is `O(n)`. From here we have to search for the `max ID (O(k))`, disable a TE (in worst case) and insert the TE `(O(m))`
 - copy_te: Has to find the start of the TE, that we want to copy. In worst case it is O(n). From here we want to walk to the offset and insert the te.
-- len: Adds to an accumulator for each element in self.genome. Runs in O(n)
+- len: Adds to an accumulator for each element in self.genome. Runs in `O(n)`
 
 
 In `src/simulate.py` you will find a program that can run simulations and tell you actual time it takes to simulate with different implementations. You can use it to test your analysis. You can modify the parameters to the simulator if you want to explore how they affect the running time.
